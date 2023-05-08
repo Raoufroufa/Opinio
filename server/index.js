@@ -7,7 +7,7 @@ import connectDB from "./mongodb/connect.js";
 
 import userRouter from "./routes/user.routes.js";
 import postRouter from "./routes/post.routes.js";
-import authenRouter from "./routes/authen.routes.js"
+import authenRouter from "./routes/authen.routes.js";
 import authenMiddlewhare from "./middlewhares/authen.middlewhare.js";
 
 dotenv.config();
