@@ -7,8 +7,11 @@ dotenv.config();
 
 const router = express.Router();
 
+// Register routes
 router.post("/register", registeration);
 
-router.post("/logging", logging);
+
+// Login routes
+router.post("/login", logging);
 
 export default router;

@@ -6,6 +6,7 @@ const PostSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
+    unique: true
   },
   description: {
     type: String,
@@ -14,14 +15,18 @@ const PostSchema = new mongoose.Schema({
   photo: [
     {
       type: String,
-      required: true,
+      required: false,
     },
   ],
-  creator: {
+  idCreator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-  },
-});
+  }, 
+  idCategory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+  }, 
+}, {timestamps: true});
 
 const postModel = mongoose.model("Post", PostSchema);
 

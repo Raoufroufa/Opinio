@@ -1,4 +1,6 @@
 import Post from "../mongodb/models/post.js";
+import User from "../mongodb/models/user.js";
+import Category from "../mongodb/models/category.js";
 
 import * as dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
@@ -22,7 +24,19 @@ const getAllPosts = async (req, res) => {
 
 const createPost = async (req, res) => {
   try {
-    const { title, description, photo } = req.body;
+    const { title, description, photo, idCategory, email } = req.body;
+
+    const user = await User.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const category = await Category.findOne({ _id: idCategory });
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
 
     const photoUrl = await cloudinary.uploader.upload(photo);
 
@@ -30,7 +44,11 @@ const createPost = async (req, res) => {
       title,
       description,
       photo: photoUrl.url || photo,
+      idCreator: user._id,
+      idCategory: category._id,
     });
+
+    category.allPosts.push(post._id);
 
     await post.save();
 
@@ -48,21 +66,20 @@ const getPostDetail = async (req, res) => {
 
     switch (searchBy) {
       case "title":
-        post = await Post.find({ title: { $regex: value, $options: "i" } });
-        break;
-      case "description":
         post = await Post.find({
-          description: { $regex: value, $options: "i" },
-        });
+          title: { $regex: value, $options: "i" },
+        }).populate(post.idCategory);
         break;
       case "_id":
-        post = await Post.findById(value);
+        post = await Post.findById(value).populate(post.idCategory);
+        break;
+      case "idCategory":
+        post = await Post.find(value).populate(post.idCategory);
         break;
       default:
-        post = await Post.find({});
+        post = await Post.find({}).populate(post.idCategory);
         break;
     }
-
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     } else {
@@ -76,25 +93,36 @@ const getPostDetail = async (req, res) => {
 const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, photo } = req.body;
+    const { title, description, photo, idCategory } = req.body;
 
-    const photoUrl = await cloudinary.uploader.upload(photo);
+    const post = await Post.findById(id);
 
-    const postToUpdate = await Post.findByIdAndUpdate(
-      { _id: id },
-      {
-        title,
-        description,
-        photo: photoUrl.url || photo,
-      },
-      { new: true }
-    );
+    if (post.idCreator === req.body.idCreator) {
+      try {
+        const photoUrl = await cloudinary.uploader.upload(photo);
 
-    if (!postToUpdate) {
-      return res.status(404).json({ message: "Post not found" });
+        const postToUpdate = await Post.findByIdAndUpdate(
+          { _id: id },
+          {
+            $set: {
+              title,
+              description,
+              photo: photoUrl.url || photo,
+              idCategory,
+            },
+          },
+          { new: true }
+        );
+        res.status(200).json({
+          message: "Post updated successfully",
+          postToUpdate,
+        });
+      } catch (err) {
+        res.status(500).json(err);
+      }
+    } else {
+      res.status(401).json("You can update only your post!");
     }
-
-    res.status(200).json({ message: "Post updated successfully" });
   } catch (err) {
     res.status(500).json(err);
   }
@@ -103,11 +131,19 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
-    const postToDelete = await Post.findByIdAndDelete(id);
-    if (!postToDelete) {
-      return res.status(404).json({ message: "Post not found" });
+
+    const post = await Post.findById(id);
+
+    if (post.idCreator === req.body.idCreator) {
+      try {
+        await Post.delete();
+        res.status(200).json("Post has been deleted successfully");
+      } catch (err) {
+        res.status(500).json(err);
+      }
+    } else {
+      res.status(401).json("You can delete only your post!");
     }
-    res.status(200).json("Post deleted successfully");
   } catch (err) {
     res.status(500).json(err);
   }

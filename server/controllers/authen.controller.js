@@ -8,7 +8,7 @@ dotenv.config();
 
 async function registeration(req, res) {
   try {
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -17,9 +17,10 @@ async function registeration(req, res) {
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
     const user = new User({
-      name,
+      username,
       email,
       password: hashedPassword,
     });
@@ -31,7 +32,7 @@ async function registeration(req, res) {
       expiresIn: "3h",
     });
 
-    res.status(201).json({ message: "User registered successfully", token });
+    res.status(200).json({ message: "User registered successfully", token });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -44,13 +45,13 @@ async function logging(req, res) {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({ message: "Wrong credentials!" });
     }
 
     // Check if password is correct
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Wrong credentials!" });
     }
 
     // Generate JWT token
@@ -58,7 +59,7 @@ async function logging(req, res) {
       expiresIn: "3h",
     });
 
-    res.json({ message: "Logged in successfully", token });
+    res.status(200).json({ message: "Logged  successfully", token });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

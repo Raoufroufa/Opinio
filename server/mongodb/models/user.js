@@ -1,10 +1,12 @@
+
 import mongoose from "mongoose";
 
 // create user Schema & model
 const UserSchema = new mongoose.Schema({
-  name: {
+  username: {
     type: String,
     required: true,
+    unique: true,
   },
   email: {
     type: String,
@@ -14,8 +16,12 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-  }
-});
+  },
+  profilePic: {
+    type: String,
+    default: "",
+  },
+}, {timestamps: true});
 
 const userModel = mongoose.model("User", UserSchema);
 

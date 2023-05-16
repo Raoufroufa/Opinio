@@ -9,7 +9,7 @@ import {
 } from "../controllers/post.controller.js";
 
 const router = express.Router();
-
+ 
 router.route("/").get(getAllPosts);
 router.route("/:id").get(getPostDetail);
 router.route("/").post(createPost);
